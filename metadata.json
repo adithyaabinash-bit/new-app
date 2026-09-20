@@ -1,0 +1,6 @@
+{
+  "name": "Forma — Universal File Editor",
+  "description": "Universal file editor for documents, PDFs, images, and text with local-first editing, annotations, drawing, and export capabilities.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
