@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { RotateCw, Smartphone, Monitor, Check, Wifi, Battery, ChevronDown, Sparkles } from 'lucide-react'
 import PageView from '../PageView'
 import type { EditorDocument, EditorElement, Tool } from '../model'
@@ -56,20 +56,30 @@ export default function MobileViewport({
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait')
   const [fitMode, setFitMode] = useState<'fit' | 'actual'>('fit')
   const [showPresetDropdown, setShowPresetDropdown] = useState(false)
+  const [windowWidth, setWindowWidth] = useState(() => window.innerWidth)
+
+  useEffect(() => {
+    const updateWindowWidth = () => setWindowWidth(window.innerWidth)
+    window.addEventListener('resize', updateWindowWidth)
+    return () => window.removeEventListener('resize', updateWindowWidth)
+  }, [])
 
   const activePage = doc.pages[selectedPage] || doc.pages[0]
 
   const screenWidth = orientation === 'portrait' ? currentPreset.width : currentPreset.height
   const screenHeight = orientation === 'portrait' ? currentPreset.height : currentPreset.width
+  const previewScale = windowWidth <= 767 ? Math.min(1, (windowWidth - 80) / (screenWidth + 24)) : 1
+  const displayScreenWidth = Math.round(screenWidth * previewScale)
+  const displayScreenHeight = Math.round(screenHeight * previewScale)
 
   // Calculate zoom inside the mobile viewport
   const calculatedZoom = useMemo(() => {
     if (fitMode === 'actual') return 1
     // Fit page width inside mobile viewport with comfortable padding (16px)
     if (!activePage) return 0.5
-    const targetWidth = screenWidth - 24
+    const targetWidth = displayScreenWidth - 24
     return Math.min(1, +(targetWidth / activePage.width).toFixed(3))
-  }, [fitMode, screenWidth, activePage])
+  }, [fitMode, displayScreenWidth, activePage])
 
   const toggleOrientation = () => {
     setOrientation(prev => (prev === 'portrait' ? 'landscape' : 'portrait'))
@@ -173,16 +183,16 @@ export default function MobileViewport({
         <div
           className={`mobile-device-frame ${orientation} ${currentPreset.platform}`}
           style={{
-            width: screenWidth + 24,
-            height: screenHeight + 24
+            width: displayScreenWidth + 24,
+            height: displayScreenHeight + 24
           }}
         >
           {/* Hardware frame bezel */}
           <div
             className="mobile-device-screen"
             style={{
-              width: screenWidth,
-              height: screenHeight
+              width: displayScreenWidth,
+              height: displayScreenHeight
             }}
           >
             {/* Status Bar */}
