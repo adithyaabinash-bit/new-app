@@ -3,3 +3,7 @@ dist/
 .pnpm-store/
 *.tsbuildinfo
 *.log
+android/local.properties
+android/.gradle/
+android/build/
+android/app/build/
