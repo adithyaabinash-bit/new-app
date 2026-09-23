@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowDownToLine, ArrowLeft, ChevronDown, ChevronRight, Circle, Copy, Download, Eraser, FileImage, FilePlus2, FileText, FolderOpen, GripVertical, Hand, Highlighter, ImagePlus, Layers3, LayoutGrid, Maximize2, Menu, Minus, Monitor, Moon, MousePointer2, PenLine, Plus, RectangleHorizontal, Redo2, Save, Search, Settings2, Smartphone, Sun, Trash2, Undo2, UploadCloud, X } from 'lucide-react'
+import { ArrowDownToLine, ArrowLeft, ChevronDown, ChevronRight, Copy, Download, Eraser, FileImage, FilePlus2, FileText, FolderOpen, GripVertical, Hand, Highlighter, ImagePlus, Layers3, LayoutGrid, Maximize2, Menu, Minus, Monitor, Moon, MousePointer2, PenLine, Plus, Redo2, Save, Search, Settings2, Smartphone, Sun, Trash2, Undo2, UploadCloud, X } from 'lucide-react'
 import PageView from './PageView'
 import MobileViewport from './components/MobileViewport'
 import { openFile } from './adapters'
@@ -13,9 +13,7 @@ type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'failed'
 const toolbar: { id: Tool; label: string; icon: typeof MousePointer2 }[] = [
   { id: 'select', label: 'Select', icon: MousePointer2 }, { id: 'hand', label: 'Pan', icon: Hand },
   { id: 'text', label: 'Add text', icon: FileText }, { id: 'pen', label: 'Draw', icon: PenLine },
-  { id: 'highlight', label: 'Highlight', icon: Highlighter }, { id: 'eraser', label: 'Erase object', icon: Eraser },
-  { id: 'rectangle', label: 'Rectangle', icon: RectangleHorizontal }, { id: 'ellipse', label: 'Ellipse', icon: Circle },
-  { id: 'cover', label: 'Visual cover', icon: LayoutGrid }
+  { id: 'highlight', label: 'Highlight', icon: Highlighter }, { id: 'eraser', label: 'Erase object', icon: Eraser }
 ]
 const kindIcon = { pdf: FileText, document: FileText, image: FileImage, text: FileText, unsupported: FileText }
 const kindColor = { pdf: 'orange', document: 'blue', image: 'purple', text: 'green', unsupported: 'gray' }
