@@ -143,6 +143,7 @@ export default function PageView({ page, zoom, active, tool, color, brushSize, s
       {element.type === 'shape' && <div className={`element-shape ${element.shape || 'rectangle'}`} style={{ background: element.fill || '#dae5ff', borderColor: element.color || '#5470ec', borderWidth: element.size || 2 }} />}
       {element.type === 'cover' && <div className="element-cover" />}
       {element.type === 'image' && <img src={element.src} draggable={false} alt="Inserted" />}
+      {selected && element.type === 'text' && <button type="button" className="text-move-handle" aria-label="Move text box" title="Drag to move text" onPointerDown={e => startElement(e, element)}>⠿</button>}
       {selected && <span className="resize-handle" onPointerDown={e => startElement(e, element, true)} />}
     </div>
   }
