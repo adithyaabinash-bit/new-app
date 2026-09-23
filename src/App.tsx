@@ -48,12 +48,26 @@ export default function App() {
   const [mobileDrawer, setMobileDrawer] = useState<'none' | 'sidebar' | 'inspector'>('none')
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
+  const exportMenuOpen = useRef(false)
   const imageInput = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const panRef = useRef<{ x: number; y: number; left: number; top: number } | null>(null)
 
   useEffect(() => { getDocuments().then(setRecent).catch(() => showToast('Local projects could not be loaded')) }, [])
   useEffect(() => { document.documentElement.dataset.theme = theme; localStorage.setItem('forma-theme', theme) }, [theme])
+  useEffect(() => { exportMenuOpen.current = showExportMenu }, [showExportMenu])
+  useEffect(() => {
+    if (!showExportMenu) return
+    const closeExportMenu = (event: Event) => {
+      const target = event.target as Element
+      if (!target.closest('.export-menu') && !target.closest('.top-actions .primary-button')) {
+        exportMenuOpen.current = false
+        setShowExportMenu(false)
+      }
+    }
+    document.addEventListener('pointerdown', closeExportMenu)
+    return () => document.removeEventListener('pointerdown', closeExportMenu)
+  }, [showExportMenu])
   useEffect(() => {
     if (!doc || saveStatus !== 'unsaved') return
     const timer = setTimeout(async () => {
@@ -111,7 +125,12 @@ export default function App() {
   }
   async function exportNow(format?: ExportFormat) {
     if (!docRef.current) return
-    if (!format) { setShowExportMenu(true); return }
+    if (!format) {
+      const nextMenuState = !exportMenuOpen.current
+      exportMenuOpen.current = nextMenuState
+      setShowExportMenu(nextMenuState)
+      return
+    }
     setBusy(true)
     try { showToast(await exportDocument(docRef.current, format)) }
     catch (error) { showToast(error instanceof Error ? error.message : 'Export failed') }
@@ -163,7 +182,8 @@ export default function App() {
       const meta = event.ctrlKey || event.metaKey
       const target = event.target as HTMLElement
       const typing = target.isContentEditable || ['INPUT', 'TEXTAREA'].includes(target.tagName)
-      if (meta && event.key.toLowerCase() === 's') { event.preventDefault(); void saveNow() }
+      if (event.key === 'Escape') { setShowExportMenu(false); setShowSearch(false); setTextDraft(null) }
+      else if (meta && event.key.toLowerCase() === 's') { event.preventDefault(); void saveNow() }
       else if (meta && event.key.toLowerCase() === 'z' && !typing) { event.preventDefault(); event.shiftKey ? redo() : undo() }
       else if (meta && event.key.toLowerCase() === 'y' && !typing) { event.preventDefault(); redo() }
       else if (meta && event.key.toLowerCase() === 'f') { event.preventDefault(); setShowSearch(true) }
