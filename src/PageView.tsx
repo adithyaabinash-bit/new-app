@@ -21,6 +21,7 @@ interface Props {
 }
 
 export default function PageView({ page, zoom, active, tool, color, brushSize, selectedId, onActivate, onSelect, onAdd, onUpdate, onDelete, onContent, onRequestText }: Props) {
+  void onRequestText
   const [draft, setDraft] = useState<EditorElement | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
   const gesture = useRef<{ id: string; x: number; y: number; startX: number; startY: number; width: number; height: number; resize: boolean } | null>(null)
@@ -44,6 +45,13 @@ export default function PageView({ page, zoom, active, tool, color, brushSize, s
     image.src = page.background
     return () => { image.onload = null }
   }, [page.background, page.width, page.height])
+  useEffect(() => {
+    if (!editing) return
+    const editor = pageRef.current?.querySelector<HTMLElement>(`[data-element-id="${editing}"] .element-text`)
+    if (!editor) return
+    const frame = window.requestAnimationFrame(() => editor.focus())
+    return () => window.cancelAnimationFrame(frame)
+  }, [editing, page.elements])
   const sampledBackground = (x: number, y: number, radius: number) => {
     const context = backgroundPixels.current
     if (!context) return '#fff'
@@ -73,7 +81,10 @@ export default function PageView({ page, zoom, active, tool, color, brushSize, s
     onActivate(); onSelect(null)
     const p = point(event)
     if (tool === 'text') {
-      onRequestText(p)
+      const id = uid()
+      onAdd({ id, type: 'text', x: p.x, y: p.y, width: 280, height: 42, text: '', color: '#111827', fontFamily: 'Inter', fontSize: 24, opacity: 1 })
+      onSelect(id)
+      setEditing(id)
     } else if (tool === 'eraser') {
       const size = Math.max(8, brushSize * 4)
       const backgroundColor = sampledBackground(p.x, p.y, size)
@@ -127,7 +138,7 @@ export default function PageView({ page, zoom, active, tool, color, brushSize, s
       return <svg key={element.id} className="stroke-layer" width={page.width} height={page.height} style={{ pointerEvents: 'none' }} onPointerDown={e => startElement(e, element)}>{colors && colors.length > 1 ? points.slice(1).map((point, index) => <line key={index} x1={points[index].x} y1={points[index].y} x2={point.x} y2={point.y} stroke={colors[index + 1] || element.color || '#4267ee'} strokeWidth={element.size || 4} strokeOpacity={element.opacity ?? 1} strokeLinecap="round" style={{ pointerEvents: tool === 'eraser' ? 'stroke' : 'none' }} />) : <polyline style={{ pointerEvents: tool === 'eraser' ? 'stroke' : 'none' }} points={points.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke={element.color || '#4267ee'} strokeWidth={element.size || 4} strokeOpacity={element.opacity ?? 1} strokeLinecap="round" strokeLinejoin="round" />}</svg>
     }
     const style: React.CSSProperties = { left: element.x, top: element.y, width: element.width, height: element.height, opacity: element.opacity ?? 1 }
-    return <div key={element.id} className={`canvas-element ${selected ? 'selected' : ''} ${element.type}`} style={style} onPointerDown={e => startElement(e, element)} onDoubleClick={e => { if (element.type === 'text') { e.stopPropagation(); setEditing(element.id) } }}>
+    return <div key={element.id} data-element-id={element.id} className={`canvas-element ${selected ? 'selected' : ''} ${element.type}`} style={style} onPointerDown={e => startElement(e, element)} onDoubleClick={e => { if (element.type === 'text') { e.stopPropagation(); setEditing(element.id) } }}>
       {element.type === 'text' && <div className="element-text" contentEditable={editing === element.id} suppressContentEditableWarning style={{ color: element.color || '#111827', fontFamily: element.fontFamily || 'Inter', fontSize: element.fontSize || 24, fontWeight: element.fontWeight, fontStyle: element.fontStyle, textAlign: element.textAlign || 'left' }} onBlur={e => { if (editing === element.id) onUpdate(element.id, { text: e.currentTarget.innerText }); setEditing(null) }}>{element.text}</div>}
       {element.type === 'shape' && <div className={`element-shape ${element.shape || 'rectangle'}`} style={{ background: element.fill || '#dae5ff', borderColor: element.color || '#5470ec', borderWidth: element.size || 2 }} />}
       {element.type === 'cover' && <div className="element-cover" />}
