@@ -60,12 +60,14 @@ public class MainActivity extends Activity {
     private float zoom = 1f;
     private String exportFormat = "";
     private boolean insertImagePending = false;
+    private boolean showingHome = true;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         getWindow().getDecorView().setSystemUiVisibility(0x2000);
         buildScreen();
         renderSurface();
+        showHome();
     }
 
     private int dp(float value) { return (int)(value * getResources().getDisplayMetrics().density + .5f); }
@@ -81,14 +83,14 @@ public class MainActivity extends Activity {
     private void buildScreen() {
         root = new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setBackgroundColor(Color.rgb(245,247,251));
         LinearLayout top = row(); top.setPadding(dp(10),dp(5),dp(10),dp(5)); top.setBackgroundColor(Color.WHITE);
-        TextView logo = label("✦ Forma",18,ink); logo.setTypeface(null,1); top.addView(logo,new LinearLayout.LayoutParams(0,dp(48),1));
-        top.addView(button("Recent", this::showRecent)); top.addView(button("New", this::newDocument)); top.addView(button("Open", this::openPicker)); top.addView(button("Save", this::saveLocally)); top.addView(button("Export", this::showExports));
+        TextView logo = label("forma.",20,Color.rgb(35,44,66)); logo.setTypeface(null,1); top.addView(logo,new LinearLayout.LayoutParams(0,dp(48),1));
+        top.addView(button("Save", this::saveLocally)); top.addView(button("Export", this::showExports));
         root.addView(top);
         title = label(fileName,13,Color.rgb(38,49,72)); title.setPadding(dp(14),dp(8),dp(14),dp(8)); title.setSingleLine(true); title.setEllipsize(android.text.TextUtils.TruncateAt.MIDDLE); root.addView(title);
 
         HorizontalScrollView toolsScroll = new HorizontalScrollView(this); toolsScroll.setHorizontalScrollBarEnabled(false);
         toolbar = row(); toolbar.setPadding(dp(5),dp(2),dp(5),dp(2)); toolbar.setBackgroundColor(Color.WHITE);
-        String[][] tools = {{"Undo","undo"},{"Redo","redo"},{"Select","select"},{"Pan","pan"},{"Text","text"},{"Draw","draw"},{"Mark","highlight"},{"Erase","erase"},{"Image","image"}};
+        String[][] tools = {{"↶","undo"},{"↷","redo"},{"↖","select"},{"✋","pan"},{"T","text"},{"✎","draw"},{"▱","highlight"},{"▰","erase"},{"▧","image"}};
         for (String[] item : tools) toolbar.addView(button(item[0], () -> {if(item[1].equals("undo"))pageView.undo();else if(item[1].equals("redo"))pageView.redo();else chooseTool(item[1]);}));
         toolsScroll.addView(toolbar); root.addView(toolsScroll);
         HorizontalScrollView pageToolsScroll=new HorizontalScrollView(this);pageToolsScroll.setHorizontalScrollBarEnabled(false);pdfPageTools=row();pdfPageTools.setPadding(dp(5),0,dp(5),0);pdfPageTools.setVisibility(View.GONE);
@@ -115,6 +117,36 @@ public class MainActivity extends Activity {
         status = label("Files and edits stay on this device",11,Color.GRAY); status.setPadding(dp(14),dp(7),dp(14),dp(7)); root.addView(status);
         setContentView(root);
     }
+
+    private GradientDrawable shape(int color, int radius, int stroke) {
+        GradientDrawable d = new GradientDrawable(); d.setColor(color); d.setCornerRadius(dp(radius));
+        if (stroke != 0) d.setStroke(dp(1), stroke); return d;
+    }
+    private TextView homeText(String text, int size, int color, boolean bold) {
+        TextView t = label(text, size, color); if (bold) t.setTypeface(null, 1); return t;
+    }
+    private void showHome() {
+        showingHome = true;
+        ScrollView scroll = new ScrollView(this); scroll.setFillViewport(true); scroll.setBackgroundColor(Color.rgb(250,250,252));
+        LinearLayout page = new LinearLayout(this); page.setOrientation(LinearLayout.VERTICAL); page.setPadding(dp(22),dp(18),dp(22),dp(28));
+        LinearLayout brand = row(); TextView logo = homeText("forma.",25,Color.rgb(35,44,66),true); brand.addView(logo,new LinearLayout.LayoutParams(0,dp(52),1));
+        TextView local = homeText("ON DEVICE",10,ink,true); local.setPadding(dp(10),dp(8),dp(10),dp(8)); local.setBackground(shape(0xFFEFF0FF,20,0)); brand.addView(local); page.addView(brand);
+        TextView kicker = homeText("UNIVERSAL FILE EDITOR",10,ink,true); kicker.setPadding(0,dp(25),0,dp(9)); page.addView(kicker);
+        TextView heading = homeText("Make every file\nfeel editable.",35,Color.rgb(35,44,66),true); heading.setLineSpacing(dp(1),1f); page.addView(heading);
+        TextView copy = homeText("One focused canvas for documents, images, PDFs, and the ideas that need a final pass.",15,Color.rgb(108,117,137),false); copy.setLineSpacing(dp(4),1f); LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(-1,-2);cp.topMargin=dp(14);page.addView(copy,cp);
+        Button open=button("↑   Open a file",this::openPicker); open.setTextSize(15);open.setTypeface(null,1);open.setBackground(shape(0xFF5C53E2,14,0));open.setTextColor(Color.WHITE);LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,dp(54));bp.topMargin=dp(22);page.addView(open,bp);
+        Button fresh=button("＋   New document",this::newDocument);fresh.setTextSize(15);LinearLayout.LayoutParams fp=new LinearLayout.LayoutParams(-1,dp(52));fp.topMargin=dp(10);page.addView(fresh,fp);
+        LinearLayout formats=row();formats.setPadding(0,dp(18),0,dp(24));for(String f:new String[]{"PDF","DOCX","PNG","JPG","TXT","MD"}){TextView chip=homeText(f,10,Color.rgb(94,103,126),true);chip.setPadding(dp(7),dp(6),dp(7),dp(6));formats.addView(chip);}page.addView(formats);
+        LinearLayout recentHead=row();TextView recent=homeText("Recent files",23,Color.rgb(35,44,66),true);recentHead.addView(recent,new LinearLayout.LayoutParams(0,-2,1));TextView all=homeText("SEE ALL",10,ink,true);all.setOnClickListener(v->showRecent());recentHead.addView(all);page.addView(recentHead);
+        String stored=getSharedPreferences("forma-local",MODE_PRIVATE).getString("recent","");int count=0;
+        for(String item:stored.split("\n")){if(item.isEmpty()||count>=6)continue;String[] parts=item.split("\t",2);String name=parts.length>1?parts[1]:"Document";String locator=parts[0];LinearLayout card=row();card.setPadding(dp(13),dp(11),dp(10),dp(11));card.setBackground(shape(Color.WHITE,15,0xFFE8EAF1));LinearLayout.LayoutParams cardp=new LinearLayout.LayoutParams(-1,-2);cardp.topMargin=dp(9);page.addView(card,cardp);
+            TextView icon=homeText(name.toLowerCase(Locale.ROOT).endsWith(".pdf")?"PDF":"▤",11,ink,true);icon.setGravity(Gravity.CENTER);icon.setBackground(shape(0xFFF0F1FF,11,0xFFDCDFFF));card.addView(icon,new LinearLayout.LayoutParams(dp(44),dp(44)));
+            LinearLayout detail=new LinearLayout(this);detail.setOrientation(LinearLayout.VERTICAL);detail.setPadding(dp(11),0,0,0);TextView nm=homeText(name,14,Color.rgb(44,52,72),true);nm.setSingleLine(true);nm.setEllipsize(android.text.TextUtils.TruncateAt.MIDDLE);detail.addView(nm);detail.addView(homeText("SAVED ON THIS DEVICE",9,Color.rgb(137,145,163),true));card.addView(detail,new LinearLayout.LayoutParams(0,-2,1));card.setOnClickListener(v->{try{if(locator.startsWith("forma-local://")){String localName=locator.substring("forma-local://".length());loadFile(Uri.fromFile(new File(new File(getFilesDir(),"projects"),localName)));}else loadFile(Uri.parse(locator));}catch(Exception e){toast("Open this file again from device storage.");}});count++;}
+        if(count==0){LinearLayout empty=new LinearLayout(this);empty.setOrientation(LinearLayout.VERTICAL);empty.setGravity(Gravity.CENTER);empty.setPadding(dp(12),dp(23),dp(12),dp(23));empty.setBackground(shape(Color.WHITE,16,0xFFE8EAF1));LinearLayout.LayoutParams ep=new LinearLayout.LayoutParams(-1,-2);ep.topMargin=dp(13);page.addView(empty,ep);empty.addView(homeText("▧",26,ink,true));empty.addView(homeText("A fresh canvas awaits",16,Color.rgb(44,52,72),true));TextView hint=homeText("Open your first file or start from a blank document.",12,Color.rgb(125,133,151),false);hint.setGravity(Gravity.CENTER);empty.addView(hint);}
+        TextView foot=homeText("Local-first editing · Your files stay on this device",11,Color.rgb(137,145,163),false);foot.setGravity(Gravity.CENTER);LinearLayout.LayoutParams fop=new LinearLayout.LayoutParams(-1,dp(44));fop.topMargin=dp(16);page.addView(foot,fop);
+        scroll.addView(page);setContentView(scroll);
+    }
+    private void showEditor(){showingHome=false;setContentView(root);}
 
     private void chooseTool(String next) {
         tool = next;
@@ -147,7 +179,7 @@ public class MainActivity extends Activity {
             else if (lower.endsWith(".docx")) { fileKind="document"; textContent=readDocx(bytes); }
             else if (isText(lower)) { fileKind="text"; textContent=new String(bytes,Charset.forName("UTF-8")); if(lower.endsWith(".html")||lower.endsWith(".htm"))textContent=textContent.replaceAll("(?is)<(script|style)[^>]*>.*?</\\1>","").replaceAll("<[^>]+>","").replace("&nbsp;"," ").replace("&amp;","&").replace("&lt;","<").replace("&gt;",">"); }
             else throw new Exception("Forma cannot edit this file type yet");
-            title.setText(fileName); documentEditor.setText(textContent); boolean editableText=fileKind.equals("text")||fileKind.equals("document");documentEditor.setVisibility(editableText?View.VISIBLE:View.GONE);pageView.setVisibility(editableText?View.GONE:View.VISIBLE);pdfPageTools.setVisibility(fileKind.equals("pdf")?View.VISIBLE:View.GONE);rememberRecent(uri,fileName);renderSurface(); status.setText("Opened locally · changes remain on this device");
+            title.setText(fileName); documentEditor.setText(textContent); boolean editableText=fileKind.equals("text")||fileKind.equals("document");documentEditor.setVisibility(editableText?View.VISIBLE:View.GONE);pageView.setVisibility(editableText?View.GONE:View.VISIBLE);pdfPageTools.setVisibility(fileKind.equals("pdf")?View.VISIBLE:View.GONE);rememberRecent(uri,fileName);showEditor();renderSurface(); status.setText("Opened locally · changes remain on this device");
         } catch (Exception e) { toast("Could not open file: "+e.getMessage()); }
     }
     private boolean isImage(String n) { return n.endsWith(".png")||n.endsWith(".jpg")||n.endsWith(".jpeg")||n.endsWith(".webp")||n.endsWith(".gif")||n.endsWith(".bmp"); }
@@ -156,7 +188,7 @@ public class MainActivity extends Activity {
     private String queryName(Uri uri) { String result=uri.getLastPathSegment(); android.database.Cursor c=getContentResolver().query(uri,null,null,null,null); if(c!=null){try{if(c.moveToFirst()){int i=c.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);if(i>=0)result=c.getString(i);}}finally{c.close();}} return result==null?"Document":result; }
     private void rememberRecent(Uri uri,String name){String value=uri.toString()+"\t"+name;android.content.SharedPreferences p=getSharedPreferences("forma-local",MODE_PRIVATE);String stored=p.getString("recent","");ArrayList<String> items=new ArrayList<>();for(String item:stored.split("\n"))if(!item.isEmpty()&&!item.startsWith(uri.toString()+"\t"))items.add(item);items.add(0,value);while(items.size()>12)items.remove(items.size()-1);p.edit().putString("recent",android.text.TextUtils.join("\n",items)).apply();}
     private void showRecent(){String stored=getSharedPreferences("forma-local",MODE_PRIVATE).getString("recent","");ArrayList<String> items=new ArrayList<>();for(String item:stored.split("\n"))if(!item.isEmpty())items.add(item);if(items.isEmpty()){toast("Open a file to add it to Recent");return;}String[] names=new String[items.size()];for(int i=0;i<items.size();i++){String[] parts=items.get(i).split("\t",2);names[i]=parts.length>1?parts[1]:parts[0];}new AlertDialog.Builder(this).setTitle("Recent files on this device").setItems(names,(d,index)->{try{String locator=items.get(index).split("\t",2)[0];if(locator.startsWith("forma-local://")){String localName=locator.substring("forma-local://".length());File file=new File(new File(getFilesDir(),"projects"),localName);if(!file.getCanonicalPath().startsWith(new File(getFilesDir(),"projects").getCanonicalPath()+File.separator))throw new Exception("Invalid local project path");loadFile(Uri.fromFile(file));}else loadFile(Uri.parse(locator));}catch(Exception e){toast("That file is no longer available. Open it again from device storage.");}}).show();}
-    private void newDocument(){closePdf();sourceUri=null;background=null;pdfPages=0;pdfSourcePages.clear();pdfPageMarks.clear();pageIndex=0;fileKind="text";fileName="Untitled document.txt";textContent="";pageView.clear();title.setText(fileName);documentEditor.setText("");documentEditor.setVisibility(View.VISIBLE);pageView.setVisibility(View.GONE);pdfPageTools.setVisibility(View.GONE);renderSurface();status.setText("New local document · use Save to keep a copy");}
+    private void newDocument(){closePdf();sourceUri=null;background=null;pdfPages=0;pdfSourcePages.clear();pdfPageMarks.clear();pageIndex=0;fileKind="text";fileName="Untitled document.txt";textContent="";pageView.clear();title.setText(fileName);documentEditor.setText("");documentEditor.setVisibility(View.VISIBLE);pageView.setVisibility(View.GONE);pdfPageTools.setVisibility(View.GONE);showEditor();renderSurface();status.setText("New local document · use Save to keep a copy");}
     private String readDocx(byte[] data) throws Exception {
         java.util.zip.ZipInputStream zip=new java.util.zip.ZipInputStream(new java.io.ByteArrayInputStream(data)); java.util.zip.ZipEntry entry; ByteArrayOutputStream xml=new ByteArrayOutputStream();
         while((entry=zip.getNextEntry())!=null){if("word/document.xml".equals(entry.getName())){byte[] b=new byte[4096];int n;while((n=zip.read(b))!=-1)xml.write(b,0,n);break;}} zip.close();
@@ -239,6 +271,6 @@ public class MainActivity extends Activity {
     }
     private static class Mark {String type="draw",text="";float x,y,width=4;int color=Color.BLUE;ArrayList<float[]> points;Bitmap image;Mark copy(){Mark m=new Mark();m.type=type;m.text=text;m.x=x;m.y=y;m.width=width;m.color=color;m.points=points==null?null:new ArrayList<>(points);m.image=image;return m;}}
 
-    @Override public void onBackPressed(){if(textEntryRow.getVisibility()==View.VISIBLE){textEntryRow.setVisibility(View.GONE);tool="select";}else super.onBackPressed();}
+    @Override public void onBackPressed(){if(textEntryRow.getVisibility()==View.VISIBLE){textEntryRow.setVisibility(View.GONE);tool="select";}else if(!showingHome){showHome();}else super.onBackPressed();}
     @Override protected void onDestroy(){closePdf();super.onDestroy();}
 }
