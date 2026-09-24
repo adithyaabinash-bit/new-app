@@ -16,3 +16,7 @@ This folder is the Android handoff for Forma. The existing web editor remains th
 Use a Kotlin Android shell with a single WebView loading the built Forma bundle. The bridge should expose Android's document picker and download APIs to the existing local-first adapters. Keep the editor UI in the shared web bundle so the Android build does not drift from the browser feature set.
 
 The native build can later replace individual bridge pieces with Kotlin implementations without changing the editor model or export formats.
+
+## APK size
+
+The debug APK is about 1.1 MB. That is expected for a WebView app: Android provides the WebView engine, and Gradle compresses the roughly 3 MB web bundle (including the PDF worker) inside the APK.
