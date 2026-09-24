@@ -1,22 +1,19 @@
 # Forma Android
 
-This folder is the Android handoff for Forma. The existing web editor remains the feature reference and the Android client should preserve the same local-first behavior.
+Forma for Android is a native Android application. It does not include or display the browser editor. File selection, page rendering, annotation drawing, and exports run locally on the device.
 
 ## Feature parity checklist
 
-- Open files from device storage and keep recent projects locally.
-- Edit PDF, image, text, Markdown, HTML, and supported document content.
-- Select, pan, add and move text, draw, highlight, erase or whiteout, and insert images.
-- Keep undo and redo history, page and layer navigation, file metadata, zoom, fit, and fullscreen behavior.
-- Export original files, flattened PDF, editable HTML, PNG, plain text, and Forma JSON projects.
-- Support light and dark themes, compact phone layouts, touch targets, safe areas, and keyboard shortcuts when a hardware keyboard is present.
+- Open PDFs, common images, DOCX, and text formats from device storage.
+- Edit text documents and annotate rendered pages with text, drawing, highlighting, whiteout, and inserted images.
+- Navigate PDF pages and adjust page zoom.
+- Add, duplicate, delete, and reorder PDF pages, and undo or redo annotation edits.
+- Save project copies locally or export the original, PDF page, PNG, plain text, HTML, and Forma JSON.
 
-## Recommended implementation
+## Build
 
-Use a Kotlin Android shell with a single WebView loading the built Forma bundle. The bridge should expose Android's document picker and download APIs to the existing local-first adapters. Keep the editor UI in the shared web bundle so the Android build does not drift from the browser feature set.
+Open this folder in Android Studio and run the `app` configuration. The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`.
 
-The native build can later replace individual bridge pieces with Kotlin implementations without changing the editor model or export formats.
+The web version remains in the repository root. Android code is in `app/src/main/java/com/forma/editor`.
 
-## APK size
-
-The debug APK is about 1.1 MB. That is expected for a WebView app: Android provides the WebView engine, and Gradle compresses the roughly 3 MB web bundle (including the PDF worker) inside the APK.
+The native DOCX import extracts editable text rather than preserving Word's rich layout. The browser-only search panel and detailed layer/property inspector are not part of the current native screen yet.
